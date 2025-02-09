@@ -1,0 +1,65 @@
+diff --git a/src/arch/x86/asm.h b/src/arch/x86/asm.h
+index 81b3268..b5ce0df 100644
+--- a/src/arch/x86/asm.h
++++ b/src/arch/x86/asm.h
+@@ -7,7 +7,7 @@
+  ============================================================================
+  */
+ 
+-#if defined(__APPLE__) || defined(__MACH__)
++#if defined(__APPLE__) || defined(__MACH__) || defined(__MSYS__)
+ 
+ # define NESTED(symbol) \
+     .globl _##symbol; \
+diff --git a/src/kern/io/hev-task-io-reactor-kqueue.h b/src/kern/io/hev-task-io-reactor-kqueue.h
+index bbf178c..81b4722 100644
+--- a/src/kern/io/hev-task-io-reactor-kqueue.h
++++ b/src/kern/io/hev-task-io-reactor-kqueue.h
+@@ -12,7 +12,11 @@
+ 
+ #include <poll.h>
+ #include <sys/types.h>
++#ifdef __MSYS__
++#include <kqueue/sys/event.h>
++#else
+ #include <sys/event.h>
++#endif
+ #include <sys/time.h>
+ 
+ #ifndef EVFILT_EXCEPT
+diff --git a/src/kern/task/hev-task-call.c b/src/kern/task/hev-task-call.c
+index bf712be..f0ed25a 100644
+--- a/src/kern/task/hev-task-call.c
++++ b/src/kern/task/hev-task-call.c
+@@ -16,6 +16,13 @@
+ 
+ extern void hev_task_execute (HevTaskCall *self, HevTaskCallEntry entry);
+ 
++#ifdef __MSYS__
++void hev_task_execute (HevTaskCall *self, HevTaskCallEntry entry)
++{
++    // TODO: linker cannot find this function ???
++}
++#endif
++
+ EXPORT_SYMBOL HevTaskCall *
+ hev_task_call_new (int base_size, int stack_size)
+ {
+diff --git a/src/kern/task/hev-task-stack-mmap.c b/src/kern/task/hev-task-stack-mmap.c
+index 6008780..2b3ed04 100644
+--- a/src/kern/task/hev-task-stack-mmap.c
++++ b/src/kern/task/hev-task-stack-mmap.c
+@@ -46,7 +46,12 @@ hev_task_stack_new (int size)
+         return NULL;
+ 
+     self->stack = mmap (NULL, size, PROT_READ | PROT_WRITE,
+-                        MAP_PRIVATE | MAP_ANON | MAP_STACK, -1, 0);
++                        MAP_PRIVATE | MAP_ANON
++#ifndef __MSYS__
++// TODO: MSYS2 does not have MAP_STACK
++                        | MAP_STACK
++#endif
++                        , -1, 0);
+     if (self->stack == MAP_FAILED) {
+         hev_free (self);
+         return NULL;

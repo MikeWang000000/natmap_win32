@@ -1,0 +1,44 @@
+diff --git a/Makefile b/Makefile
+index 6041318..0444d99 100644
+--- a/Makefile
++++ b/Makefile
+@@ -11,6 +11,9 @@ CCFLAGS=-O3 -pipe -Wall -Werror $(CFLAGS) \
+ 		-I$(THIRDPARTDIR)/hev-task-system/src/lib/rbtree
+ LDFLAGS=-L$(THIRDPARTDIR)/hev-task-system/bin -lhev-task-system \
+ 		-lpthread
++ifeq ($(OS),Windows_NT)
++   LDFLAGS+=-lkqueue
++endif
+ 
+ SRCDIR=src
+ BINDIR=bin
+diff --git a/src/hev-misc.c b/src/hev-misc.c
+index c793e13..4d334b5 100644
+--- a/src/hev-misc.c
++++ b/src/hev-misc.c
+@@ -14,7 +14,9 @@
+ #include <string.h>
+ #include <sys/types.h>
+ #include <sys/socket.h>
++#ifndef __MSYS__
+ #include <sys/syscall.h>
++#endif
+ 
+ #include "hev-misc.h"
+ 
+diff --git a/src/hev-misc.h b/src/hev-misc.h
+index 438e596..de86fe1 100644
+--- a/src/hev-misc.h
++++ b/src/hev-misc.h
+@@ -10,6 +10,11 @@
+ #ifndef __HEV_MISC_H__
+ #define __HEV_MISC_H__
+ 
++#ifdef __MSYS__
++// There's no SO_REUSEPORT on Windows. Just use SO_REUSEADDR.
++#define SO_REUSEPORT SO_REUSEADDR
++#endif
++
+ #include <hev-task.h>
+ #include <hev-task-io.h>
+ 
