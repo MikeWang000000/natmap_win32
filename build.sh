@@ -8,7 +8,7 @@ if [ "${MSYSTEM:-}" != "MSYS" ]; then
 fi
 
 pacman -Sy --needed --noconfirm gcc git make patch zip mingw-w64-clang-x86_64-libkqueue
-export CFLAGS="-I/clang64/include -L/clang64/lib"
+export CFLAGS="-I/clang64/include/kqueue -L/clang64/lib"
 
 if [ ! -d natmap ]; then
     export MSYS=winsymlinks:native
